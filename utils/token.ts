@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 
 const jwtSecret = process.env.JWT_SECRET;
 
@@ -16,4 +16,27 @@ export type AuthTokenPayload = {
 
 export function generateToken(payload: AuthTokenPayload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+}
+
+function isAuthTokenPayload(
+  decoded: string | JwtPayload
+): decoded is JwtPayload & AuthTokenPayload {
+  return (
+    typeof decoded !== "string" &&
+    typeof decoded.userId === "string" &&
+    typeof decoded.email === "string"
+  );
+}
+
+export function verifyToken(token: string): AuthTokenPayload {
+  const decoded = jwt.verify(token, JWT_SECRET);
+
+  if (!isAuthTokenPayload(decoded)) {
+    throw new Error("Invalid token payload.");
+  }
+
+  return {
+    userId: decoded.userId,
+    email: decoded.email,
+  };
 }
