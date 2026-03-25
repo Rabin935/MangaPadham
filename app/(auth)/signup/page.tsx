@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
+import { GuestRoute } from "@/components/auth/auth-guard";
 import {
   AuthField,
   AuthShell,
@@ -113,72 +114,74 @@ export default function SignupPage() {
   }
 
   return (
-    <AuthShell
-      activePath="/signup"
-      eyebrow="Create Account"
-      title="Start your next reading streak in style."
-      description="Set up your account to unlock chapters, save progress, and manage your coins from a single account."
-      asideTitle="Build a library identity that feels made for late-night binges."
-      asideCopy="Signup validates on the client, posts to your API route, and keeps the experience fast with clear feedback for both success and failure."
-      footer={
-        <p className="text-sm text-slate-400">
-          Already have an account?{" "}
-          <Link href="/login" className="font-medium text-cyan-300">
-            Login here
-          </Link>
-          .
-        </p>
-      }
-    >
-      <form className="space-y-5" onSubmit={handleSubmit}>
-        <AuthField
-          id="name"
-          label="Display name"
-          autoComplete="name"
-          placeholder="Rabin"
-          value={name}
-          onChange={setName}
-          error={errors.name}
-        />
-        <AuthField
-          id="email"
-          label="Email"
-          type="email"
-          autoComplete="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={setEmail}
-          error={errors.email}
-        />
-        <AuthField
-          id="password"
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          placeholder="Create a password"
-          value={password}
-          onChange={setPassword}
-          error={errors.password}
-        />
-        <AuthField
-          id="confirmPassword"
-          label="Confirm password"
-          type="password"
-          autoComplete="new-password"
-          placeholder="Repeat your password"
-          value={confirmPassword}
-          onChange={setConfirmPassword}
-          error={errors.confirmPassword}
-        />
+    <GuestRoute>
+      <AuthShell
+        activePath="/signup"
+        eyebrow="Create Account"
+        title="Start your next reading streak in style."
+        description="Set up your account to unlock chapters, save progress, and manage your coins from a single account."
+        asideTitle="Build a library identity that feels made for late-night binges."
+        asideCopy="Signup validates on the client, posts to your API route, and keeps the experience fast with clear feedback for both success and failure."
+        footer={
+          <p className="text-sm text-slate-400">
+            Already have an account?{" "}
+            <Link href="/login" className="font-medium text-cyan-300">
+              Login here
+            </Link>
+            .
+          </p>
+        }
+      >
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <AuthField
+            id="name"
+            label="Display name"
+            autoComplete="name"
+            placeholder="Rabin"
+            value={name}
+            onChange={setName}
+            error={errors.name}
+          />
+          <AuthField
+            id="email"
+            label="Email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={setEmail}
+            error={errors.email}
+          />
+          <AuthField
+            id="password"
+            label="Password"
+            type="password"
+            autoComplete="new-password"
+            placeholder="Create a password"
+            value={password}
+            onChange={setPassword}
+            error={errors.password}
+          />
+          <AuthField
+            id="confirmPassword"
+            label="Confirm password"
+            type="password"
+            autoComplete="new-password"
+            placeholder="Repeat your password"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            error={errors.confirmPassword}
+          />
 
-        {message ? <FormMessage type={message.type} message={message.text} /> : null}
+          {message ? <FormMessage type={message.type} message={message.text} /> : null}
 
-        <SubmitButton
-          label="Create account"
-          pendingLabel="Creating your account..."
-          pending={isSubmitting}
-        />
-      </form>
-    </AuthShell>
+          <SubmitButton
+            label="Create account"
+            pendingLabel="Creating your account..."
+            pending={isSubmitting}
+          />
+        </form>
+      </AuthShell>
+    </GuestRoute>
   );
 }

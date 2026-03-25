@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { GuestRoute } from "@/components/auth/auth-guard";
 import {
   AuthField,
   AuthShell,
@@ -84,47 +85,49 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell
-      activePath="/forgot-password"
-      eyebrow="Recover Access"
-      title="Reset your password without losing the mood."
-      description="Enter your email to request a reset link. Recovery tokens expire after fifteen minutes and are mocked to the server log in this setup."
-      asideTitle="A calmer recovery experience with the same visual identity."
-      asideCopy="The page validates your email instantly, talks to the forgot-password API route, and keeps the response generic to avoid exposing whether an account exists."
-      footer={
-        <p className="text-sm text-slate-400">
-          Remembered it again?{" "}
-          <Link href="/login" className="font-medium text-cyan-300">
-            Return to login
-          </Link>
-          {" "}or{" "}
-          <Link href="/signup" className="font-medium text-amber-300">
-            create a new account
-          </Link>
-          .
-        </p>
-      }
-    >
-      <form className="space-y-5" onSubmit={handleSubmit}>
-        <AuthField
-          id="email"
-          label="Account email"
-          type="email"
-          autoComplete="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={setEmail}
-          error={errors.email}
-        />
+    <GuestRoute>
+      <AuthShell
+        activePath="/forgot-password"
+        eyebrow="Recover Access"
+        title="Reset your password without losing the mood."
+        description="Enter your email to request a reset link. Recovery tokens expire after fifteen minutes and are mocked to the server log in this setup."
+        asideTitle="A calmer recovery experience with the same visual identity."
+        asideCopy="The page validates your email instantly, talks to the forgot-password API route, and keeps the response generic to avoid exposing whether an account exists."
+        footer={
+          <p className="text-sm text-slate-400">
+            Remembered it again?{" "}
+            <Link href="/login" className="font-medium text-cyan-300">
+              Return to login
+            </Link>
+            {" "}or{" "}
+            <Link href="/signup" className="font-medium text-amber-300">
+              create a new account
+            </Link>
+            .
+          </p>
+        }
+      >
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <AuthField
+            id="email"
+            label="Account email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={setEmail}
+            error={errors.email}
+          />
 
-        {message ? <FormMessage type={message.type} message={message.text} /> : null}
+          {message ? <FormMessage type={message.type} message={message.text} /> : null}
 
-        <SubmitButton
-          label="Send reset link"
-          pendingLabel="Generating reset link..."
-          pending={isSubmitting}
-        />
-      </form>
-    </AuthShell>
+          <SubmitButton
+            label="Send reset link"
+            pendingLabel="Generating reset link..."
+            pending={isSubmitting}
+          />
+        </form>
+      </AuthShell>
+    </GuestRoute>
   );
 }

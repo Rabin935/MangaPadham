@@ -76,7 +76,7 @@ export async function POST(request: Request) {
           coins: user.coins,
           readChapters: user.readChapters,
           unlockedChapters: user.unlockedChapters,
-          createdAt: user.createdAt,
+          createdAt: user.createdAt.toISOString(),
         },
       },
       { status: 200 }

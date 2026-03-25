@@ -1,24 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useState, useTransition } from "react";
+import { GuestRoute } from "@/components/auth/auth-guard";
+import { useAuth } from "@/components/auth/auth-provider";
 import {
   AuthField,
   AuthShell,
   FormMessage,
   SubmitButton,
 } from "../_components/auth-ui";
-import { EMAIL_REGEX, readApiFeedback } from "../_components/auth-utils";
+import { EMAIL_REGEX } from "../_components/auth-utils";
 
 type FieldErrors = {
   email?: string;
   password?: string;
 };
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -27,6 +31,7 @@ export default function LoginPage() {
     text: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const redirectTo = searchParams.get("next") || "/dashboard";
 
   function validate() {
     const nextErrors: FieldErrors = {};
@@ -56,35 +61,26 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      const result = await login({
+        email,
+        password,
       });
 
-      const data = await readApiFeedback(response);
-
-      if (!response.ok) {
+      if (!result.success) {
         setMessage({
           type: "error",
-          text: data.message || "Unable to login. Please try again.",
+          text: result.message,
         });
         return;
       }
 
       setMessage({
         type: "success",
-        text: data.message || "Login successful. Redirecting to home...",
+        text: result.message || "Login successful. Redirecting to dashboard...",
       });
 
       startTransition(() => {
-        router.push("/");
+        router.push(redirectTo);
       });
     } catch {
       setMessage({
@@ -97,57 +93,86 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell
-      activePath="/login"
-      eyebrow="Welcome Back"
-      title="Step back into your reading vault."
-      description="Use your email and password to continue where you left off. Your session token will be stored automatically after a successful login."
-      asideTitle="Return to your unlocked chapters and saved progress."
-      asideCopy="The login flow talks directly to your API route, stores the JWT cookie, and gives instant feedback without breaking the mood of the page."
-      footer={
-        <p className="text-sm text-slate-400">
-          New here?{" "}
-          <Link href="/signup" className="font-medium text-cyan-300">
-            Create an account
-          </Link>
-          {" "}or{" "}
-          <Link href="/forgot-password" className="font-medium text-amber-300">
-            recover your password
-          </Link>
-          .
+    <GuestRoute redirectTo={redirectTo}>
+      <AuthShell
+        activePath="/login"
+        eyebrow="Welcome Back"
+        title="Step back into your reading vault."
+        description="Use your email and password to continue where you left off. Your session token will be stored automatically after a successful login."
+        asideTitle="Return to your unlocked chapters and saved progress."
+        asideCopy="The login flow talks directly to your API route, stores the JWT cookie, hydrates the auth context, and keeps access persistent across reloads."
+        footer={
+          <p className="text-sm text-slate-400">
+            New here?{" "}
+            <Link href="/signup" className="font-medium text-cyan-300">
+              Create an account
+            </Link>
+            {" "}or{" "}
+            <Link href="/forgot-password" className="font-medium text-amber-300">
+              recover your password
+            </Link>
+            .
+          </p>
+        }
+      >
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <AuthField
+            id="email"
+            label="Email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={setEmail}
+            error={errors.email}
+          />
+          <AuthField
+            id="password"
+            label="Password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={setPassword}
+            error={errors.password}
+          />
+
+          {message ? <FormMessage type={message.type} message={message.text} /> : null}
+
+          <SubmitButton
+            label="Enter Manga Padham"
+            pendingLabel="Signing you in..."
+            pending={isSubmitting}
+          />
+        </form>
+      </AuthShell>
+    </GuestRoute>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <main className="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[rgba(7,13,28,0.78)] p-8 text-center shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+        <div className="mx-auto mb-5 h-12 w-12 animate-pulse rounded-full bg-cyan-300/20" />
+        <p className="text-xs uppercase tracking-[0.4em] text-cyan-300/80">
+          Manga Padham
         </p>
-      }
-    >
-      <form className="space-y-5" onSubmit={handleSubmit}>
-        <AuthField
-          id="email"
-          label="Email"
-          type="email"
-          autoComplete="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={setEmail}
-          error={errors.email}
-        />
-        <AuthField
-          id="password"
-          label="Password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="Enter your password"
-          value={password}
-          onChange={setPassword}
-          error={errors.password}
-        />
+        <h1 className="mt-4 text-2xl font-semibold text-white">
+          Loading login
+        </h1>
+        <p className="mt-3 text-sm leading-7 text-slate-300">
+          Preparing the sign-in flow and restoring your navigation context.
+        </p>
+      </div>
+    </main>
+  );
+}
 
-        {message ? <FormMessage type={message.type} message={message.text} /> : null}
-
-        <SubmitButton
-          label="Enter Manga Padham"
-          pendingLabel="Signing you in..."
-          pending={isSubmitting}
-        />
-      </form>
-    </AuthShell>
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

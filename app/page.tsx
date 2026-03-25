@@ -27,8 +27,14 @@ export default function Home() {
 
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/login"
+              href="/dashboard"
               className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-cyan-300/40 hover:bg-white/5"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/login"
+              className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-white/30 hover:bg-white/5"
             >
               Login
             </Link>
@@ -52,8 +58,14 @@ export default function Home() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                href="/signup"
+                href="/dashboard"
                 className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
+              >
+                Open dashboard
+              </Link>
+              <Link
+                href="/signup"
+                className="rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-slate-200 transition hover:border-cyan-300/40 hover:bg-white/5"
               >
                 Start with signup
               </Link>
