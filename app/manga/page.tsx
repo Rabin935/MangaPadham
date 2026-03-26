@@ -1,55 +1,23 @@
 import Image from "next/image";
-import type {
-  CoverArtRelationship,
-  LocalizedString,
-  Manga,
-} from "@/types/mangadex";
+import Link from "next/link";
+import type { Manga } from "@/types/mangadex";
 import { getMangaList } from "@/lib/mangadex";
-
-function getLocalizedText(
-  values: LocalizedString | undefined,
-  fallback: string
-) {
-  if (!values) {
-    return fallback;
-  }
-
-  return values.en ?? values["ja-ro"] ?? values.ja ?? Object.values(values)[0] ?? fallback;
-}
-
-function getCoverImageUrl(manga: Manga) {
-  const coverArt = manga.relationships.find(
-    (relationship): relationship is CoverArtRelationship =>
-      relationship.type === "cover_art" &&
-      typeof relationship.attributes === "object" &&
-      relationship.attributes !== null &&
-      "fileName" in relationship.attributes &&
-      typeof relationship.attributes.fileName === "string"
-  );
-
-  if (!coverArt?.attributes?.fileName) {
-    return null;
-  }
-
-  return `https://uploads.mangadex.org/covers/${manga.id}/${coverArt.attributes.fileName}.256.jpg`;
-}
-
-function getGenreLabel(manga: Manga) {
-  const genres = manga.attributes.tags
-    .filter((tag) => tag.attributes.group === "genre")
-    .map((tag) => getLocalizedText(tag.attributes.name, "Unknown genre"))
-    .slice(0, 2);
-
-  return genres.length > 0 ? genres.join(" / ") : "Unknown genre";
-}
+import {
+  getCoverImageUrl,
+  getGenreLabels,
+  getMangaTitle,
+} from "@/lib/manga-display";
 
 function MangaCard({ manga }: { manga: Manga }) {
-  const title = getLocalizedText(manga.attributes.title, "Untitled manga");
-  const genre = getGenreLabel(manga);
+  const title = getMangaTitle(manga);
+  const genre = getGenreLabels(manga).slice(0, 2).join(" / ") || "Unknown genre";
   const coverImageUrl = getCoverImageUrl(manga);
 
   return (
-    <article className="group overflow-hidden rounded-[28px] border border-white/10 bg-[rgba(7,13,28,0.78)] shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/35">
+    <Link
+      href={`/manga/${manga.id}`}
+      className="group block overflow-hidden rounded-[28px] border border-white/10 bg-[rgba(7,13,28,0.78)] shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/35"
+    >
       <div className="relative aspect-[4/5] overflow-hidden bg-[linear-gradient(180deg,rgba(34,211,238,0.2),rgba(8,14,32,0.95))]">
         {coverImageUrl ? (
           <Image
@@ -77,7 +45,7 @@ function MangaCard({ manga }: { manga: Manga }) {
         </h2>
         <p className="text-sm leading-6 text-slate-300">{genre}</p>
       </div>
-    </article>
+    </Link>
   );
 }
 
