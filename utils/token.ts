@@ -1,12 +1,7 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
+import { getJwtSecret } from "@/lib/env";
 
-const jwtSecret = process.env.JWT_SECRET;
-
-if (!jwtSecret) {
-  throw new Error("Please define the JWT_SECRET environment variable in .env.local");
-}
-
-const JWT_SECRET: string = jwtSecret;
+const JWT_SECRET = getJwtSecret();
 const JWT_EXPIRES_IN = "7d";
 
 export type AuthTokenPayload = {

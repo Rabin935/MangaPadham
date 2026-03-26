@@ -1,3 +1,11 @@
+import type {
+  Chapter,
+  ChapterListResponse,
+  Manga,
+  MangaListResponse,
+  MangaResponse,
+} from "@/types/mangadex";
+
 export const MANGADEX_BASE_URL =
   process.env.NEXT_PUBLIC_MANGADEX_BASE_URL ?? "https://api.mangadex.org";
 
@@ -10,36 +18,6 @@ type SearchParams = Record<
   QueryValue | QueryValue[] | null | undefined
 >;
 
-type MangaDexApiError = {
-  detail?: string;
-  status?: number;
-  title?: string;
-};
-
-type MangaDexEntity<TAttributes> = {
-  id: string;
-  type: string;
-  attributes: TAttributes;
-  relationships: MangaDexRelationship[];
-};
-
-type MangaDexCollectionResponse<TData> = {
-  result: "ok" | "error";
-  response: "collection";
-  data: TData[];
-  limit: number;
-  offset: number;
-  total: number;
-  errors?: MangaDexApiError[];
-};
-
-type MangaDexEntityResponse<TData> = {
-  result: "ok" | "error";
-  response: "entity";
-  data: TData;
-  errors?: MangaDexApiError[];
-};
-
 export class MangaDexRequestError extends Error {
   status?: number;
 
@@ -49,55 +27,6 @@ export class MangaDexRequestError extends Error {
     this.status = status;
   }
 }
-
-export type MangaDexLocalizedString = Record<string, string>;
-
-export type MangaDexRelationship = {
-  id: string;
-  type: string;
-  related?: string;
-  attributes?: Record<string, unknown>;
-};
-
-export type MangaDexTag = {
-  id: string;
-  type: string;
-  attributes?: Record<string, unknown>;
-  relationships?: MangaDexRelationship[];
-};
-
-export type MangaDexMangaAttributes = {
-  title: MangaDexLocalizedString;
-  altTitles?: MangaDexLocalizedString[];
-  description: MangaDexLocalizedString;
-  originalLanguage: string;
-  status: string;
-  year: number | null;
-  contentRating: string;
-  availableTranslatedLanguages?: string[];
-  latestUploadedChapter?: string | null;
-  tags?: MangaDexTag[];
-  createdAt: string;
-  updatedAt: string;
-  [key: string]: unknown;
-};
-
-export type MangaDexChapterAttributes = {
-  volume: string | null;
-  chapter: string | null;
-  title: string | null;
-  translatedLanguage: string;
-  externalUrl: string | null;
-  publishAt: string;
-  readableAt: string;
-  createdAt: string;
-  updatedAt: string;
-  pages: number;
-  [key: string]: unknown;
-};
-
-export type MangaDexManga = MangaDexEntity<MangaDexMangaAttributes>;
-export type MangaDexChapter = MangaDexEntity<MangaDexChapterAttributes>;
 
 function createMangaDexUrl(path: string, searchParams?: SearchParams) {
   const url = new URL(path, MANGADEX_BASE_URL);
@@ -227,46 +156,41 @@ function normalizeId(value: string, label: string) {
   return normalizedValue;
 }
 
-export async function getMangaList() {
-  const response = await fetchFromMangaDex<MangaDexCollectionResponse<MangaDexManga>>(
-    "/manga",
-    {
-      limit: DEFAULT_MANGA_LIST_LIMIT,
-      "includes[]": ["cover_art", "author", "artist"],
-    }
-  );
+export async function getMangaList(): Promise<Manga[]> {
+  const response = await fetchFromMangaDex<MangaListResponse>("/manga", {
+    limit: DEFAULT_MANGA_LIST_LIMIT,
+    "includes[]": ["cover_art", "author", "artist"],
+  });
 
   return response.data;
 }
 
-export async function getMangaById(id: string) {
+export async function getMangaById(id: string): Promise<Manga> {
   const mangaId = encodeURIComponent(normalizeId(id, "Manga ID"));
-  const response = await fetchFromMangaDex<MangaDexEntityResponse<MangaDexManga>>(
-    `/manga/${mangaId}`,
-    {
-      "includes[]": ["cover_art", "author", "artist"],
-    }
-  );
+  const response = await fetchFromMangaDex<MangaResponse>(`/manga/${mangaId}`, {
+    "includes[]": ["cover_art", "author", "artist"],
+  });
 
   return response.data;
 }
 
-export async function getChapters(mangaId: string) {
+export async function getChapters(mangaId: string): Promise<Chapter[]> {
   const normalizedMangaId = encodeURIComponent(
     normalizeId(mangaId, "Manga ID")
   );
-  const chapters: MangaDexChapter[] = [];
+  const chapters: Chapter[] = [];
   let offset = 0;
 
   while (true) {
-    const response = await fetchFromMangaDex<
-      MangaDexCollectionResponse<MangaDexChapter>
-    >(`/manga/${normalizedMangaId}/feed`, {
-      limit: CHAPTERS_PAGE_LIMIT,
-      offset,
-      "order[volume]": "asc",
-      "order[chapter]": "asc",
-    });
+    const response = await fetchFromMangaDex<ChapterListResponse>(
+      `/manga/${normalizedMangaId}/feed`,
+      {
+        limit: CHAPTERS_PAGE_LIMIT,
+        offset,
+        "order[volume]": "asc",
+        "order[chapter]": "asc",
+      }
+    );
 
     chapters.push(...response.data);
 
