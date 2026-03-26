@@ -49,6 +49,12 @@ export default function DashboardPage() {
             >
               Back home
             </Link>
+            <Link
+              href="/manga"
+              className="rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
+            >
+              Browse manga
+            </Link>
             <button
               type="button"
               onClick={() => {
