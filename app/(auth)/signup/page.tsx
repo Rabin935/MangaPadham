@@ -119,9 +119,9 @@ export default function SignupPage() {
         activePath="/signup"
         eyebrow="Create Account"
         title="Start your next reading streak in style."
-        description="Set up your account to unlock chapters, save progress, and manage your coins from a single account."
+        description="Create your reader profile to unlock chapters, track your journey, and keep your favorite manga adventures in one place."
         asideTitle="Build a library identity that feels made for late-night binges."
-        asideCopy="Signup validates on the client, posts to your API route, and keeps the experience fast with clear feedback for both success and failure."
+        asideCopy="Join a home for manga fans where every account becomes a personal corner for legendary battles, heartfelt moments, and stories worth following to the end."
         footer={
           <p className="text-sm text-slate-400">
             Already have an account?{" "}

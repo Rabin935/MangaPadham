@@ -98,9 +98,9 @@ function LoginPageContent() {
         activePath="/login"
         eyebrow="Welcome Back"
         title="Step back into your reading vault."
-        description="Use your email and password to continue where you left off. Your session token will be stored automatically after a successful login."
+        description="Sign in to continue your manga journey, revisit your saved series, and jump straight back into the chapters you were enjoying."
         asideTitle="Return to your unlocked chapters and saved progress."
-        asideCopy="The login flow talks directly to your API route, stores the JWT cookie, hydrates the auth context, and keeps access persistent across reloads."
+        asideCopy="Your shelf is waiting with ongoing story arcs, bookmarked moments, and all the late-night reading energy you left behind."
         footer={
           <p className="text-sm text-slate-400">
             New here?{" "}
@@ -162,7 +162,8 @@ function LoginPageFallback() {
           Loading login
         </h1>
         <p className="mt-3 text-sm leading-7 text-slate-300">
-          Preparing the sign-in flow and restoring your navigation context.
+          Opening the gate back to your manga shelf and getting your next read
+          ready.
         </p>
       </div>
     </main>

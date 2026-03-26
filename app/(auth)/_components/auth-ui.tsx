@@ -86,28 +86,29 @@ export function AuthShell({
           <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-1">
             <div className="rounded-[24px] border border-white/10 bg-white/5 p-5">
               <p className="text-xs uppercase tracking-[0.35em] text-slate-500">
-                Fast Auth
+                Fresh Chapters
               </p>
               <p className="mt-3 text-sm leading-7 text-slate-100">
-                Built on Next.js App Router routes with client-side validation.
+                Discover new worlds, follow unforgettable heroes, and keep your
+                latest reads close at hand.
               </p>
             </div>
             <div className="rounded-[24px] border border-white/10 bg-white/5 p-5">
               <p className="text-xs uppercase tracking-[0.35em] text-slate-500">
-                JWT + MongoDB
+                Your Library
               </p>
               <p className="mt-3 text-sm leading-7 text-slate-100">
-                Secure sessions, reusable DB helpers, and polished feedback
-                states.
+                Save favorite series, return to ongoing arcs, and keep your
+                reading journey organized in one place.
               </p>
             </div>
             <div className="rounded-[24px] border border-white/10 bg-white/5 p-5">
               <p className="text-xs uppercase tracking-[0.35em] text-slate-500">
-                Recovery Ready
+                Night Reading
               </p>
               <p className="mt-3 text-sm leading-7 text-slate-100">
-                Password reset tokens expire in fifteen minutes for safer
-                account recovery.
+                Settle into a calm dark mode made for long reading sessions,
+                cliffhangers, and one-more-chapter energy.
               </p>
             </div>
           </div>

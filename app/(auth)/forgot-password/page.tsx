@@ -90,9 +90,9 @@ export default function ForgotPasswordPage() {
         activePath="/forgot-password"
         eyebrow="Recover Access"
         title="Reset your password without losing the mood."
-        description="Enter your email to request a reset link. Recovery tokens expire after fifteen minutes and are mocked to the server log in this setup."
+        description="Enter your email and we will help you find your way back to your manga shelf, favorite series, and saved reading progress."
         asideTitle="A calmer recovery experience with the same visual identity."
-        asideCopy="The page validates your email instantly, talks to the forgot-password API route, and keeps the response generic to avoid exposing whether an account exists."
+        asideCopy="Even if you lose your password, your library, reading streaks, and beloved story arcs will still be waiting when you return."
         footer={
           <p className="text-sm text-slate-400">
             Remembered it again?{" "}
