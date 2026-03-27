@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FavoriteToggleButton } from "@/components/manga/favorite-toggle-button";
 import { getChapters, getMangaById, MangaDexRequestError } from "@/lib/mangadex";
 import type { Chapter, Manga } from "@/types/mangadex";
 import {
@@ -144,6 +145,8 @@ export default async function MangaDetailPage({
                   View on MangaDex
                 </a>
               )}
+
+              <FavoriteToggleButton mangaId={manga.id} />
             </div>
 
             <div className="mt-8 rounded-[24px] border border-white/10 bg-white/5 p-6">

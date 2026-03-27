@@ -7,8 +7,28 @@ type ReadingTrackerProps = {
   chapterId: string;
 };
 
+type ContinueReadingResponse = {
+  success?: boolean;
+  continueReading?: {
+    mangaId: string;
+    mangaTitle: string;
+    chapterId: string;
+    chapterNumber: string;
+    chapterTitle: string;
+  };
+  readChapters?: string[];
+};
+
+async function readTrackingPayload(response: Response) {
+  try {
+    return (await response.json()) as ContinueReadingResponse;
+  } catch {
+    return null;
+  }
+}
+
 export function ReadingTracker({ chapterId }: ReadingTrackerProps) {
-  const { isAuthenticated, refreshAuth, user } = useAuth();
+  const { isAuthenticated, refreshAuth, updateUser, user } = useAuth();
   const lastTrackedChapterRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -40,11 +60,33 @@ export function ReadingTracker({ chapterId }: ReadingTrackerProps) {
           }),
         });
 
+        const payload = await readTrackingPayload(response);
+
         if (!response.ok || cancelled) {
           return;
         }
 
-        await refreshAuth();
+        if (payload?.continueReading) {
+          updateUser((currentUser) =>
+            currentUser
+              ? {
+                  ...currentUser,
+                  continueReading: payload.continueReading ?? null,
+                  readChapters: Array.isArray(payload.readChapters)
+                    ? payload.readChapters
+                    : currentUser.readChapters.includes(chapterId)
+                      ? currentUser.readChapters
+                      : [...currentUser.readChapters, chapterId],
+                }
+              : currentUser
+          );
+        }
+
+        try {
+          await refreshAuth();
+        } catch {
+          // Keep the optimistic reading state if the background refresh fails.
+        }
       } catch {
         // Keep the reader resilient even if saving progress fails.
       }
@@ -55,7 +97,13 @@ export function ReadingTracker({ chapterId }: ReadingTrackerProps) {
     return () => {
       cancelled = true;
     };
-  }, [chapterId, isAuthenticated, refreshAuth, user?.continueReading?.chapterId]);
+  }, [
+    chapterId,
+    isAuthenticated,
+    refreshAuth,
+    updateUser,
+    user?.continueReading?.chapterId,
+  ]);
 
   return null;
 }

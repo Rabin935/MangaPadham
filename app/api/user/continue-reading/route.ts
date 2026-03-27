@@ -43,19 +43,27 @@ export const POST = withAuth(async (request) => {
       chapterTitle: getChapterTitle(chapter),
     };
 
-    await User.findByIdAndUpdate(request.user.id, {
-      $set: {
-        continueReading,
+    const updatedUser = await User.findByIdAndUpdate(
+      request.user.id,
+      {
+        $set: {
+          continueReading,
+        },
+        $addToSet: {
+          readChapters: chapter.id,
+        },
       },
-      $addToSet: {
-        readChapters: chapter.id,
-      },
-    });
+      {
+        new: true,
+        select: "continueReading readChapters",
+      }
+    );
 
     return NextResponse.json(
       {
         success: true,
-        continueReading,
+        continueReading: updatedUser?.continueReading ?? continueReading,
+        readChapters: updatedUser?.readChapters ?? [chapter.id],
       },
       { status: 200 }
     );

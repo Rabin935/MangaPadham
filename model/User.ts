@@ -8,6 +8,7 @@ export interface IUser {
   coins: number;
   readChapters: string[];
   unlockedChapters: string[];
+  favoriteMangaIds: string[];
   continueReading: ContinueReading | null;
   resetToken: string | null;
   resetTokenExpiry: Date | null;
@@ -79,6 +80,10 @@ const userSchema = new Schema<IUser>(
       type: [String],
       default: [],
     },
+    favoriteMangaIds: {
+      type: [String],
+      default: [],
+    },
     continueReading: {
       type: continueReadingSchema,
       default: null,
@@ -97,6 +102,17 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-const User = (models.User as Model<IUser>) || model<IUser>("User", userSchema);
+const existingUserModel = models.User as Model<IUser> | undefined;
+const isStaleUserModel =
+  existingUserModel &&
+  (!existingUserModel.schema.path("favoriteMangaIds") ||
+    !existingUserModel.schema.path("continueReading"));
+
+if (isStaleUserModel) {
+  delete models.User;
+}
+
+const User =
+  (models.User as Model<IUser> | undefined) || model<IUser>("User", userSchema);
 
 export default User;

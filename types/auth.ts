@@ -13,6 +13,7 @@ export type AuthUser = {
   coins: number;
   readChapters: string[];
   unlockedChapters: string[];
+  favoriteMangaIds: string[];
   continueReading: ContinueReading | null;
   createdAt: string;
 };
