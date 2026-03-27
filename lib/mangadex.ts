@@ -1,13 +1,17 @@
 import type {
   Chapter,
+  ChapterResponse,
   ChapterListResponse,
   Manga,
+  MangaDexAtHomeResponse,
   MangaListResponse,
   MangaResponse,
 } from "@/types/mangadex";
 
 export const MANGADEX_BASE_URL =
   process.env.NEXT_PUBLIC_MANGADEX_BASE_URL ?? "https://api.mangadex.org";
+
+export type ChapterImageQuality = "data" | "dataSaver";
 
 const DEFAULT_MANGA_LIST_LIMIT = 20;
 const CHAPTERS_PAGE_LIMIT = 100;
@@ -204,4 +208,29 @@ export async function getChapters(mangaId: string): Promise<Chapter[]> {
   }
 
   return chapters;
+}
+
+export async function getChapterById(id: string): Promise<Chapter> {
+  const chapterId = encodeURIComponent(normalizeId(id, "Chapter ID"));
+  const response = await fetchFromMangaDex<ChapterResponse>(
+    `/chapter/${chapterId}`
+  );
+
+  return response.data;
+}
+
+export async function getChapterPages(
+  chapterId: string,
+  quality: ChapterImageQuality = "data"
+) {
+  const normalizedChapterId = encodeURIComponent(
+    normalizeId(chapterId, "Chapter ID")
+  );
+  const response = await fetchFromMangaDex<MangaDexAtHomeResponse>(
+    `/at-home/server/${normalizedChapterId}`
+  );
+
+  return response.chapter[quality].map(
+    (fileName) => `${response.baseUrl}/${quality}/${response.chapter.hash}/${fileName}`
+  );
 }

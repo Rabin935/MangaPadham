@@ -1,8 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getMangaById, MangaDexRequestError } from "@/lib/mangadex";
-import type { Manga } from "@/types/mangadex";
+import { getChapters, getMangaById, MangaDexRequestError } from "@/lib/mangadex";
+import type { Chapter, Manga } from "@/types/mangadex";
+import {
+  getChapterNumberLabel,
+  getChapterTitle,
+  getReaderPageHref,
+  sortChaptersLatestFirst,
+} from "@/lib/chapter-display";
 import {
   getCoverImageUrl,
   getGenreLabels,
@@ -33,7 +39,9 @@ export default async function MangaDetailPage({
 }: MangaDetailPageProps) {
   const { id } = await params;
   let manga: Manga | null = null;
+  let chapters: Chapter[] = [];
   let errorMessage: string | null = null;
+  let chapterErrorMessage: string | null = null;
 
   try {
     manga = await getMangaById(id);
@@ -60,11 +68,21 @@ export default async function MangaDetailPage({
     );
   }
 
+  try {
+    chapters = sortChaptersLatestFirst(await getChapters(id));
+  } catch (error) {
+    chapterErrorMessage =
+      error instanceof Error
+        ? error.message
+        : "Unable to load chapters right now.";
+  }
+
   const title = getMangaTitle(manga);
   const description = getMangaDescription(manga);
   const coverImageUrl = getCoverImageUrl(manga, "512");
   const genres = getGenreLabels(manga);
   const tags = getTagLabels(manga);
+  const latestChapter = chapters[0] ?? null;
 
   return (
     <main className="relative isolate min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
@@ -109,14 +127,23 @@ export default async function MangaDetailPage({
             </h1>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <a
-                href={`https://mangadex.org/title/${manga.id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
-              >
-                Read Now
-              </a>
+              {latestChapter ? (
+                <Link
+                  href={getReaderPageHref(manga.id, latestChapter.id)}
+                  className="rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
+                >
+                  Read Now
+                </Link>
+              ) : (
+                <a
+                  href={`https://mangadex.org/title/${manga.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-slate-200 transition hover:border-cyan-300/40 hover:bg-white/5"
+                >
+                  View on MangaDex
+                </a>
+              )}
             </div>
 
             <div className="mt-8 rounded-[24px] border border-white/10 bg-white/5 p-6">
@@ -162,6 +189,54 @@ export default async function MangaDetailPage({
               </div>
             </div>
           </div>
+        </section>
+
+        <section className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className="flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.35em] text-cyan-300/80">
+                Chapters
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold text-white">
+                Latest chapters
+              </h2>
+            </div>
+            <p className="text-sm text-slate-400">
+              Sorted with the newest releases first.
+            </p>
+          </div>
+
+          {chapterErrorMessage ? (
+            <div className="mt-6">
+              <ErrorState message={chapterErrorMessage} />
+            </div>
+          ) : chapters.length > 0 ? (
+            <div className="mt-6 grid gap-3">
+              {chapters.map((chapter) => (
+                <Link
+                  key={chapter.id}
+                  href={getReaderPageHref(manga.id, chapter.id)}
+                  className="flex flex-col gap-3 rounded-[22px] border border-white/10 bg-[rgba(8,14,32,0.78)] px-5 py-4 transition hover:border-cyan-300/35 hover:bg-[rgba(10,18,38,0.9)] sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-cyan-200">
+                      {getChapterNumberLabel(chapter)}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-300">
+                      {getChapterTitle(chapter)}
+                    </p>
+                  </div>
+                  <span className="text-sm font-medium text-amber-200">
+                    Open reader
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-6 text-sm leading-7 text-slate-300">
+              No chapters are available for this manga yet.
+            </p>
+          )}
         </section>
       </div>
     </main>

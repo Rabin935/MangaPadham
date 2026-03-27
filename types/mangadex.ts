@@ -44,6 +44,19 @@ export interface MangaDexEntityResponse<TData> {
   errors?: MangaDexError[];
 }
 
+export interface MangaDexAtHomeChapter {
+  hash: string;
+  data: string[];
+  dataSaver: string[];
+}
+
+export interface MangaDexAtHomeResponse {
+  result: "ok" | "error";
+  baseUrl: string;
+  chapter: MangaDexAtHomeChapter;
+  errors?: MangaDexError[];
+}
+
 export interface CoverArtAttributes {
   description: string;
   volume: string | null;
@@ -118,3 +131,4 @@ export type Chapter = MangaDexEntity<"chapter", ChapterAttributes>;
 export type MangaListResponse = MangaDexCollectionResponse<Manga>;
 export type MangaResponse = MangaDexEntityResponse<Manga>;
 export type ChapterListResponse = MangaDexCollectionResponse<Chapter>;
+export type ChapterResponse = MangaDexEntityResponse<Chapter>;

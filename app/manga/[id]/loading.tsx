@@ -44,6 +44,22 @@ export default function Loading() {
             </div>
           </div>
         </section>
+
+        <section className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className="h-3 w-28 animate-pulse rounded-full bg-white/10" />
+          <div className="mt-4 h-8 w-48 animate-pulse rounded-full bg-white/10" />
+          <div className="mt-6 grid gap-3">
+            {[0, 1, 2, 3].map((chapter) => (
+              <div
+                key={chapter}
+                className="rounded-[22px] border border-white/10 bg-[rgba(8,14,32,0.78)] px-5 py-4"
+              >
+                <div className="h-4 w-28 animate-pulse rounded-full bg-white/10" />
+                <div className="mt-3 h-4 w-2/3 animate-pulse rounded-full bg-white/10" />
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </main>
   );
