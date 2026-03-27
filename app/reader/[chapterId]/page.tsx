@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ReadingTracker } from "@/components/reader/reading-tracker";
 import {
   getChapterById,
   getChapterPages,
@@ -125,6 +126,7 @@ export default async function ReaderPage({ params }: ReaderPageProps) {
 
   return (
     <main className="relative isolate min-h-screen overflow-hidden px-4 py-6 sm:px-6 lg:px-8">
+      <ReadingTracker chapterId={chapter.id} />
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-8%] top-10 h-72 w-72 rounded-full bg-cyan-400/16 blur-3xl" />
         <div className="absolute bottom-[-10%] right-[-10%] h-80 w-80 rounded-full bg-amber-400/10 blur-3xl" />

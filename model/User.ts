@@ -1,4 +1,5 @@
 import { Model, Schema, model, models } from "mongoose";
+import type { ContinueReading } from "@/types/auth";
 
 export interface IUser {
   name: string;
@@ -7,11 +8,45 @@ export interface IUser {
   coins: number;
   readChapters: string[];
   unlockedChapters: string[];
+  continueReading: ContinueReading | null;
   resetToken: string | null;
   resetTokenExpiry: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const continueReadingSchema = new Schema<ContinueReading>(
+  {
+    mangaId: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    mangaTitle: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    chapterId: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    chapterNumber: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    chapterTitle: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  }
+);
 
 const userSchema = new Schema<IUser>(
   {
@@ -43,6 +78,10 @@ const userSchema = new Schema<IUser>(
     unlockedChapters: {
       type: [String],
       default: [],
+    },
+    continueReading: {
+      type: continueReadingSchema,
+      default: null,
     },
     resetToken: {
       type: String,

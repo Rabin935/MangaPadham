@@ -76,6 +76,7 @@ export async function POST(request: Request) {
           coins: user.coins,
           readChapters: user.readChapters,
           unlockedChapters: user.unlockedChapters,
+          continueReading: user.continueReading,
           createdAt: user.createdAt.toISOString(),
         },
       },

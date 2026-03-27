@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/components/auth/auth-provider";
+import { ContinueReadingCard } from "@/components/reader/continue-reading-card";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -67,7 +68,11 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <section className="grid gap-6 py-12 lg:grid-cols-[1fr_0.8fr]">
+        <section className="grid gap-6 py-12">
+          <ContinueReadingCard continueReading={user.continueReading} />
+        </section>
+
+        <section className="grid gap-6 pb-2 lg:grid-cols-[1fr_0.8fr]">
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
             <p className="text-xs uppercase tracking-[0.35em] text-slate-500">
               Account
