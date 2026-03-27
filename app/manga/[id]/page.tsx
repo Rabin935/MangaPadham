@@ -129,7 +129,7 @@ export default async function MangaDetailPage({
             <div className="mt-6 flex flex-wrap gap-3">
               {latestChapter ? (
                 <Link
-                  href={getReaderPageHref(manga.id, latestChapter.id)}
+                  href={getReaderPageHref(latestChapter.id)}
                   className="rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
                 >
                   Read Now
@@ -215,7 +215,7 @@ export default async function MangaDetailPage({
               {chapters.map((chapter) => (
                 <Link
                   key={chapter.id}
-                  href={getReaderPageHref(manga.id, chapter.id)}
+                  href={getReaderPageHref(chapter.id)}
                   className="flex flex-col gap-3 rounded-[22px] border border-white/10 bg-[rgba(8,14,32,0.78)] px-5 py-4 transition hover:border-cyan-300/35 hover:bg-[rgba(10,18,38,0.9)] sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>

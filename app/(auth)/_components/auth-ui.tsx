@@ -135,8 +135,8 @@ export function AuthShell({
                     href={link.href}
                     className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                       active
-                        ? "bg-white text-slate-950"
-                        : "text-slate-300 hover:bg-white/10 hover:text-white"
+                        ? "bg-black text-slate-950"
+                        : "text-slate-00 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     {link.label}
