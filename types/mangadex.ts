@@ -130,5 +130,6 @@ export type Chapter = MangaDexEntity<"chapter", ChapterAttributes>;
 
 export type MangaListResponse = MangaDexCollectionResponse<Manga>;
 export type MangaResponse = MangaDexEntityResponse<Manga>;
+export type MangaTagListResponse = MangaDexCollectionResponse<MangaTag>;
 export type ChapterListResponse = MangaDexCollectionResponse<Chapter>;
 export type ChapterResponse = MangaDexEntityResponse<Chapter>;

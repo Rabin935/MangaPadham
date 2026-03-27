@@ -15,6 +15,23 @@ export default function Loading() {
           <div className="mt-4 h-4 max-w-2xl rounded-full bg-white/10" />
         </div>
 
+        <div className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-5 sm:p-6">
+          <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
+            <div>
+              <div className="h-3 w-24 rounded-full bg-white/10" />
+              <div className="mt-3 h-14 rounded-[22px] bg-white/10" />
+            </div>
+            <div>
+              <div className="h-3 w-24 rounded-full bg-white/10" />
+              <div className="mt-3 h-14 rounded-[22px] bg-white/10" />
+            </div>
+          </div>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="h-4 w-44 rounded-full bg-white/10" />
+            <div className="h-4 w-52 rounded-full bg-white/10" />
+          </div>
+        </div>
+
         <section className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
           {loadingCards.map((card) => (
             <div

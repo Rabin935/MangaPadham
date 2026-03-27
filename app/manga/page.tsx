@@ -1,53 +1,7 @@
-import Image from "next/image";
-import Link from "next/link";
-import type { Manga } from "@/types/mangadex";
-import { getMangaList } from "@/lib/mangadex";
-import {
-  getCoverImageUrl,
-  getGenreLabels,
-  getMangaTitle,
-} from "@/lib/manga-display";
-
-function MangaCard({ manga }: { manga: Manga }) {
-  const title = getMangaTitle(manga);
-  const genre = getGenreLabels(manga).slice(0, 2).join(" / ") || "Unknown genre";
-  const coverImageUrl = getCoverImageUrl(manga);
-
-  return (
-    <Link
-      href={`/manga/${manga.id}`}
-      className="group block overflow-hidden rounded-[28px] border border-white/10 bg-[rgba(7,13,28,0.78)] shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-cyan-300/35"
-    >
-      <div className="relative aspect-[4/5] overflow-hidden bg-[linear-gradient(180deg,rgba(34,211,238,0.2),rgba(8,14,32,0.95))]">
-        {coverImageUrl ? (
-          <Image
-            src={coverImageUrl}
-            alt={title}
-            fill
-            sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition duration-500 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center px-6 text-center text-sm font-medium uppercase tracking-[0.35em] text-slate-200/70">
-            No Cover
-          </div>
-        )}
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[rgba(2,6,23,0.95)] to-transparent" />
-      </div>
-
-      <div className="space-y-3 p-5">
-        <p className="text-xs uppercase tracking-[0.35em] text-amber-300/80">
-          Genre
-        </p>
-        <h2 className="line-clamp-2 text-xl font-semibold leading-8 text-white">
-          {title}
-        </h2>
-        <p className="text-sm leading-6 text-slate-300">{genre}</p>
-      </div>
-    </Link>
-  );
-}
+import { MangaLibrary } from "@/components/manga/manga-library";
+import { getGenreTags, getMangaList } from "@/lib/mangadex";
+import { getLocalizedText } from "@/lib/manga-display";
+import type { Manga, MangaTag } from "@/types/mangadex";
 
 function ErrorState({ message }: { message: string }) {
   return (
@@ -61,11 +15,22 @@ function ErrorState({ message }: { message: string }) {
 }
 
 export default async function MangaPage() {
-  let mangaList: Manga[] = [];
+  let initialManga: Manga[] = [];
+  let genreTags: MangaTag[] = [];
   let errorMessage: string | null = null;
 
   try {
-    mangaList = await getMangaList();
+    const [mangaList, availableGenreTags] = await Promise.all([
+      getMangaList(),
+      getGenreTags(),
+    ]);
+
+    initialManga = mangaList;
+    genreTags = [...availableGenreTags].sort((leftTag, rightTag) =>
+      getLocalizedText(leftTag.attributes.name, "Unknown genre").localeCompare(
+        getLocalizedText(rightTag.attributes.name, "Unknown genre")
+      )
+    );
   } catch (error) {
     errorMessage =
       error instanceof Error
@@ -89,8 +54,8 @@ export default async function MangaPage() {
             Discover manga from MangaDex.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-8 text-slate-300">
-            Browse a live list of manga with cover art, titles, and genre tags
-            pulled directly from the MangaDex API.
+            Search by title, narrow the list by genre, and browse live manga
+            results without leaving the page.
           </p>
         </header>
 
@@ -99,11 +64,7 @@ export default async function MangaPage() {
             <ErrorState message={errorMessage} />
           </div>
         ) : (
-          <section className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            {mangaList.map((manga) => (
-              <MangaCard key={manga.id} manga={manga} />
-            ))}
-          </section>
+          <MangaLibrary initialManga={initialManga} genreTags={genreTags} />
         )}
       </div>
     </main>

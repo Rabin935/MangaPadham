@@ -6,12 +6,19 @@ import type {
   MangaDexAtHomeResponse,
   MangaListResponse,
   MangaResponse,
+  MangaTag,
+  MangaTagListResponse,
 } from "@/types/mangadex";
 
 export const MANGADEX_BASE_URL =
   process.env.NEXT_PUBLIC_MANGADEX_BASE_URL ?? "https://api.mangadex.org";
 
 export type ChapterImageQuality = "data" | "dataSaver";
+export type MangaListOptions = {
+  title?: string;
+  genreTagId?: string;
+  limit?: number;
+};
 
 const DEFAULT_MANGA_LIST_LIMIT = 20;
 const CHAPTERS_PAGE_LIMIT = 100;
@@ -160,13 +167,25 @@ function normalizeId(value: string, label: string) {
   return normalizedValue;
 }
 
-export async function getMangaList(): Promise<Manga[]> {
+export async function getMangaList(
+  options: MangaListOptions = {}
+): Promise<Manga[]> {
+  const title = options.title?.trim();
+  const genreTagId = options.genreTagId?.trim();
   const response = await fetchFromMangaDex<MangaListResponse>("/manga", {
-    limit: DEFAULT_MANGA_LIST_LIMIT,
+    limit: options.limit ?? DEFAULT_MANGA_LIST_LIMIT,
+    title: title || undefined,
+    "includedTags[]": genreTagId ? [genreTagId] : undefined,
     "includes[]": ["cover_art", "author", "artist"],
   });
 
   return response.data;
+}
+
+export async function getGenreTags(): Promise<MangaTag[]> {
+  const response = await fetchFromMangaDex<MangaTagListResponse>("/manga/tag");
+
+  return response.data.filter((tag) => tag.attributes.group === "genre");
 }
 
 export async function getMangaById(id: string): Promise<Manga> {
