@@ -11,6 +11,9 @@ export type AuthUser = {
   name: string;
   email: string;
   coins: number;
+  lastReadAt: string | null;
+  streak: number;
+  totalCoinsEarned: number;
   readChapters: string[];
   unlockedChapters: string[];
   favoriteMangaIds: string[];

@@ -63,6 +63,11 @@ async function fetchCurrentUser() {
 function normalizeAuthUser(user: AuthUser): AuthUser {
   return {
     ...user,
+    coins: typeof user.coins === "number" ? user.coins : 0,
+    lastReadAt: typeof user.lastReadAt === "string" ? user.lastReadAt : null,
+    streak: typeof user.streak === "number" ? user.streak : 0,
+    totalCoinsEarned:
+      typeof user.totalCoinsEarned === "number" ? user.totalCoinsEarned : 0,
     readChapters: Array.isArray(user.readChapters) ? user.readChapters : [],
     unlockedChapters: Array.isArray(user.unlockedChapters)
       ? user.unlockedChapters

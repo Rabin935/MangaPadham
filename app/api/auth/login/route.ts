@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createAuthenticatedUser, serializeAuthUser } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import User from "@/model/User";
 import { comparePassword } from "@/utils/hash";
@@ -63,23 +64,14 @@ export async function POST(request: Request) {
       userId: user._id.toString(),
       email: user.email,
     });
+    const authUser = createAuthenticatedUser(user);
 
     const response = NextResponse.json(
       {
         success: true,
         message: "Login successful.",
         token,
-        user: {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          coins: user.coins,
-          readChapters: user.readChapters ?? [],
-          unlockedChapters: user.unlockedChapters ?? [],
-          favoriteMangaIds: user.favoriteMangaIds ?? [],
-          continueReading: user.continueReading ?? null,
-          createdAt: user.createdAt.toISOString(),
-        },
+        user: serializeAuthUser(authUser),
       },
       { status: 200 }
     );

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/model/User";
-import type { ContinueReading } from "@/types/auth";
+import type { AuthUser, ContinueReading } from "@/types/auth";
 import { verifyToken } from "@/utils/token";
 
 type RouteContext = {
@@ -13,6 +13,9 @@ export type AuthenticatedUser = {
   name: string;
   email: string;
   coins: number;
+  lastReadAt: Date | null;
+  streak: number;
+  totalCoinsEarned: number;
   readChapters: string[];
   unlockedChapters: string[];
   favoriteMangaIds: string[];
@@ -28,6 +31,25 @@ type AuthenticatedRouteHandler<TContext = RouteContext> = (
   request: AuthenticatedRequest,
   context: TContext
 ) => Promise<Response> | Response;
+
+type AuthUserSource = {
+  _id: { toString(): string };
+  name: string;
+  email: string;
+  coins?: number;
+  lastReadAt?: Date | null;
+  streak?: number;
+  totalCoinsEarned?: number;
+  readChapters?: string[];
+  unlockedChapters?: string[];
+  favoriteMangaIds?: string[];
+  continueReading?: ContinueReading | null;
+  createdAt: Date;
+};
+
+function normalizeCount(value?: number) {
+  return typeof value === "number" && value >= 0 ? value : 0;
+}
 
 function getTokenFromCookieHeader(cookieHeader: string) {
   const cookies = cookieHeader.split(";");
@@ -69,27 +91,32 @@ function createUnauthorizedResponse(message = "Unauthorized.") {
   );
 }
 
-function sanitizeUser(user: {
-  _id: { toString(): string };
-  name: string;
-  email: string;
-  coins: number;
-  readChapters?: string[];
-  unlockedChapters?: string[];
-  favoriteMangaIds?: string[];
-  continueReading: ContinueReading | null;
-  createdAt: Date;
-}) {
+export function createAuthenticatedUser(user: AuthUserSource): AuthenticatedUser {
   return {
     id: user._id.toString(),
     name: user.name,
     email: user.email,
-    coins: user.coins,
-    readChapters: user.readChapters ?? [],
-    unlockedChapters: user.unlockedChapters ?? [],
-    favoriteMangaIds: user.favoriteMangaIds ?? [],
+    coins: normalizeCount(user.coins),
+    lastReadAt: user.lastReadAt ?? null,
+    streak: normalizeCount(user.streak),
+    totalCoinsEarned: normalizeCount(user.totalCoinsEarned),
+    readChapters: Array.isArray(user.readChapters) ? user.readChapters : [],
+    unlockedChapters: Array.isArray(user.unlockedChapters)
+      ? user.unlockedChapters
+      : [],
+    favoriteMangaIds: Array.isArray(user.favoriteMangaIds)
+      ? user.favoriteMangaIds
+      : [],
     continueReading: user.continueReading ?? null,
     createdAt: user.createdAt,
+  };
+}
+
+export function serializeAuthUser(user: AuthenticatedUser): AuthUser {
+  return {
+    ...user,
+    lastReadAt: user.lastReadAt ? user.lastReadAt.toISOString() : null,
+    createdAt: user.createdAt.toISOString(),
   };
 }
 
@@ -110,7 +137,7 @@ export async function getAuthUser(request: Request) {
     return null;
   }
 
-  return sanitizeUser(user);
+  return createAuthenticatedUser(user);
 }
 
 export function withAuth<TContext = RouteContext>(

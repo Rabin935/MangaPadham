@@ -42,12 +42,14 @@ export const POST = withAuth(async (request) => {
       chapterNumber: getChapterNumberLabel(chapter),
       chapterTitle: getChapterTitle(chapter),
     };
+    const lastReadAt = new Date();
 
     const updatedUser = await User.findByIdAndUpdate(
       request.user.id,
       {
         $set: {
           continueReading,
+          lastReadAt,
         },
         $addToSet: {
           readChapters: chapter.id,
@@ -55,7 +57,7 @@ export const POST = withAuth(async (request) => {
       },
       {
         new: true,
-        select: "continueReading readChapters",
+        select: "continueReading readChapters lastReadAt",
       }
     );
 
@@ -64,6 +66,7 @@ export const POST = withAuth(async (request) => {
         success: true,
         continueReading: updatedUser?.continueReading ?? continueReading,
         readChapters: updatedUser?.readChapters ?? [chapter.id],
+        lastReadAt: updatedUser?.lastReadAt?.toISOString() ?? lastReadAt.toISOString(),
       },
       { status: 200 }
     );

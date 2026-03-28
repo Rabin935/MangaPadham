@@ -6,6 +6,9 @@ export interface IUser {
   email: string;
   password: string;
   coins: number;
+  lastReadAt: Date | null;
+  streak: number;
+  totalCoinsEarned: number;
   readChapters: string[];
   unlockedChapters: string[];
   favoriteMangaIds: string[];
@@ -49,6 +52,14 @@ const continueReadingSchema = new Schema<ContinueReading>(
   }
 );
 
+function createNonNegativeCounterField() {
+  return {
+    type: Number,
+    default: 0,
+    min: 0,
+  };
+}
+
 const userSchema = new Schema<IUser>(
   {
     name: {
@@ -67,11 +78,13 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: true,
     },
-    coins: {
-      type: Number,
-      default: 0,
-      min: 0,
+    coins: createNonNegativeCounterField(),
+    lastReadAt: {
+      type: Date,
+      default: null,
     },
+    streak: createNonNegativeCounterField(),
+    totalCoinsEarned: createNonNegativeCounterField(),
     readChapters: {
       type: [String],
       default: [],
@@ -103,10 +116,17 @@ const userSchema = new Schema<IUser>(
 );
 
 const existingUserModel = models.User as Model<IUser> | undefined;
+const requiredUserSchemaPaths = [
+  "coins",
+  "lastReadAt",
+  "streak",
+  "totalCoinsEarned",
+  "favoriteMangaIds",
+  "continueReading",
+];
 const isStaleUserModel =
   existingUserModel &&
-  (!existingUserModel.schema.path("favoriteMangaIds") ||
-    !existingUserModel.schema.path("continueReading"));
+  requiredUserSchemaPaths.some((path) => !existingUserModel.schema.path(path));
 
 if (isStaleUserModel) {
   delete models.User;

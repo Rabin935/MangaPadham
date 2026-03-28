@@ -17,6 +17,7 @@ type ContinueReadingResponse = {
     chapterTitle: string;
   };
   readChapters?: string[];
+  lastReadAt?: string | null;
 };
 
 async function readTrackingPayload(response: Response) {
@@ -72,6 +73,10 @@ export function ReadingTracker({ chapterId }: ReadingTrackerProps) {
               ? {
                   ...currentUser,
                   continueReading: payload.continueReading ?? null,
+                  lastReadAt:
+                    typeof payload.lastReadAt === "string"
+                      ? payload.lastReadAt
+                      : currentUser.lastReadAt,
                   readChapters: Array.isArray(payload.readChapters)
                     ? payload.readChapters
                     : currentUser.readChapters.includes(chapterId)
