@@ -23,6 +23,9 @@ type AuthContextValue = {
   login: (credentials: LoginCredentials) => Promise<AuthActionResult>;
   logout: (redirectTo?: string) => Promise<void>;
   refreshAuth: () => Promise<AuthUser | null>;
+  updateUser: (
+    updater: AuthUser | null | ((currentUser: AuthUser | null) => AuthUser | null)
+  ) => void;
 };
 
 type AuthSuccessPayload = {
@@ -54,7 +57,21 @@ async function fetchCurrentUser() {
     return null;
   }
 
-  return payload.user;
+  return normalizeAuthUser(payload.user);
+}
+
+function normalizeAuthUser(user: AuthUser): AuthUser {
+  return {
+    ...user,
+    readChapters: Array.isArray(user.readChapters) ? user.readChapters : [],
+    unlockedChapters: Array.isArray(user.unlockedChapters)
+      ? user.unlockedChapters
+      : [],
+    favoriteMangaIds: Array.isArray(user.favoriteMangaIds)
+      ? user.favoriteMangaIds
+      : [],
+    continueReading: user.continueReading ?? null,
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -119,6 +136,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function updateUser(
+    updater: AuthUser | null | ((currentUser: AuthUser | null) => AuthUser | null)
+  ) {
+    setUser((currentUser) => {
+      const nextUser =
+        typeof updater === "function" ? updater(currentUser) : updater;
+
+      if (!nextUser) {
+        setStatus("unauthenticated");
+        return null;
+      }
+
+      setStatus("authenticated");
+      return normalizeAuthUser(nextUser);
+    });
+  }
+
   async function login({ email, password }: LoginCredentials) {
     const response = await fetch("/api/auth/login", {
       method: "POST",
@@ -144,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    setUser(payload.user);
+    setUser(normalizeAuthUser(payload.user));
     setStatus("authenticated");
 
     return {
@@ -181,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         refreshAuth,
+        updateUser,
       }}
     >
       {children}

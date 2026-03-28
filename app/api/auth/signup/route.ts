@@ -91,7 +91,11 @@ export async function POST(request: Request) {
           name: user.name,
           email: user.email,
           coins: user.coins,
-          createdAt: user.createdAt,
+          readChapters: user.readChapters ?? [],
+          unlockedChapters: user.unlockedChapters ?? [],
+          favoriteMangaIds: user.favoriteMangaIds ?? [],
+          continueReading: user.continueReading ?? null,
+          createdAt: user.createdAt.toISOString(),
         },
       },
       { status: 201 }

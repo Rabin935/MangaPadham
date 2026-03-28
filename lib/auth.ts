@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/model/User";
+import type { ContinueReading } from "@/types/auth";
 import { verifyToken } from "@/utils/token";
 
 type RouteContext = {
@@ -14,6 +15,8 @@ export type AuthenticatedUser = {
   coins: number;
   readChapters: string[];
   unlockedChapters: string[];
+  favoriteMangaIds: string[];
+  continueReading: ContinueReading | null;
   createdAt: Date;
 };
 
@@ -71,8 +74,10 @@ function sanitizeUser(user: {
   name: string;
   email: string;
   coins: number;
-  readChapters: string[];
-  unlockedChapters: string[];
+  readChapters?: string[];
+  unlockedChapters?: string[];
+  favoriteMangaIds?: string[];
+  continueReading: ContinueReading | null;
   createdAt: Date;
 }) {
   return {
@@ -80,8 +85,10 @@ function sanitizeUser(user: {
     name: user.name,
     email: user.email,
     coins: user.coins,
-    readChapters: user.readChapters,
-    unlockedChapters: user.unlockedChapters,
+    readChapters: user.readChapters ?? [],
+    unlockedChapters: user.unlockedChapters ?? [],
+    favoriteMangaIds: user.favoriteMangaIds ?? [],
+    continueReading: user.continueReading ?? null,
     createdAt: user.createdAt,
   };
 }

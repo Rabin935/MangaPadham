@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
         type: "success",
         text:
           data.message ||
-          "If the account exists, a reset link has been generated. In development, check the server log for the mock email link.",
+          "If the account exists, a reset link has been sent to the email address provided.",
       });
     } catch {
       setMessage({

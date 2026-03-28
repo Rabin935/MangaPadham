@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import { sendMockPasswordResetEmail } from "@/lib/mail";
+import { sendPasswordResetEmail } from "@/lib/mail";
 import User from "@/model/User";
 
 type ForgotPasswordBody = {
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
       const resetLink = `${appUrl}/reset-password?token=${rawResetToken}`;
 
-      await sendMockPasswordResetEmail({
+      await sendPasswordResetEmail({
         to: user.email,
         name: user.name,
         resetLink,
