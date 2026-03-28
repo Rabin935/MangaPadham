@@ -121,7 +121,7 @@ export function AuthShell({
                 MP
               </span>
               <span className="text-sm uppercase tracking-[0.35em] text-slate-300">
-                Manga Padham
+                Manga-Padham
               </span>
             </Link>
 
