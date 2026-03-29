@@ -10,6 +10,7 @@ export interface IUser {
   streak: number;
   totalCoinsEarned: number;
   readChapters: string[];
+  earnedCoinChapterIds: string[];
   unlockedChapters: string[];
   favoriteMangaIds: string[];
   continueReading: ContinueReading | null;
@@ -89,6 +90,10 @@ const userSchema = new Schema<IUser>(
       type: [String],
       default: [],
     },
+    earnedCoinChapterIds: {
+      type: [String],
+      default: [],
+    },
     unlockedChapters: {
       type: [String],
       default: [],
@@ -121,6 +126,7 @@ const requiredUserSchemaPaths = [
   "lastReadAt",
   "streak",
   "totalCoinsEarned",
+  "earnedCoinChapterIds",
   "favoriteMangaIds",
   "continueReading",
 ];

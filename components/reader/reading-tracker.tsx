@@ -20,24 +20,27 @@ type ContinueReadingResponse = {
   lastReadAt?: string | null;
 };
 
-async function readTrackingPayload(response: Response) {
+type EarnCoinsResponse = {
+  success?: boolean;
+  earned?: boolean;
+  coins?: number;
+  totalCoinsEarned?: number;
+};
+
+async function readResponsePayload<T>(response: Response) {
   try {
-    return (await response.json()) as ContinueReadingResponse;
+    return (await response.json()) as T;
   } catch {
     return null;
   }
 }
 
 export function ReadingTracker({ chapterId }: ReadingTrackerProps) {
-  const { isAuthenticated, refreshAuth, updateUser, user } = useAuth();
+  const { isAuthenticated, refreshAuth, updateUser } = useAuth();
   const lastTrackedChapterRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      return;
-    }
-
-    if (user?.continueReading?.chapterId === chapterId) {
       return;
     }
 
@@ -50,6 +53,42 @@ export function ReadingTracker({ chapterId }: ReadingTrackerProps) {
 
     async function trackReadingProgress() {
       try {
+        const response = await fetch("/api/coins/earn", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            chapterId,
+          }),
+        });
+
+        const payload = await readResponsePayload<EarnCoinsResponse>(response);
+
+        if (!response.ok || cancelled) {
+          return;
+        }
+
+        if (typeof payload?.coins === "number") {
+          updateUser((currentUser) =>
+            currentUser
+              ? {
+                  ...currentUser,
+                  coins: payload.coins,
+                  totalCoinsEarned:
+                    typeof payload.totalCoinsEarned === "number"
+                      ? payload.totalCoinsEarned
+                      : currentUser.totalCoinsEarned,
+                }
+              : currentUser
+          );
+        }
+      } catch {
+        // Keep the reader resilient even if awarding coins fails.
+      }
+
+      try {
         const response = await fetch("/api/user/continue-reading", {
           method: "POST",
           headers: {
@@ -61,7 +100,9 @@ export function ReadingTracker({ chapterId }: ReadingTrackerProps) {
           }),
         });
 
-        const payload = await readTrackingPayload(response);
+        const payload = await readResponsePayload<ContinueReadingResponse>(
+          response
+        );
 
         if (!response.ok || cancelled) {
           return;
@@ -107,7 +148,6 @@ export function ReadingTracker({ chapterId }: ReadingTrackerProps) {
     isAuthenticated,
     refreshAuth,
     updateUser,
-    user?.continueReading?.chapterId,
   ]);
 
   return null;
