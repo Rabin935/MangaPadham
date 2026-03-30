@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Mono, Space_Grotesk } from "next/font/google";
+import { AppNavbar } from "@/components/layout/app-navbar";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -33,7 +34,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-transparent text-foreground">
-        <Providers>{children}</Providers>
+        <Providers>
+          <AppNavbar />
+          {children}
+        </Providers>
       </body>
     </html>
   );
