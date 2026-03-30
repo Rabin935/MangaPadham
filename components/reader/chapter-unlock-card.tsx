@@ -53,7 +53,7 @@ export function ChapterUnlockCard({
     setMessage(null);
 
     try {
-      const response = await fetch("/api/chapters/unlock", {
+      const response = await fetch("/api/coins/unlock", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
