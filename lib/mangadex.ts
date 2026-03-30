@@ -19,6 +19,8 @@ export type MangaListOptions = {
   genreTagId?: string;
   limit?: number;
   offset?: number;
+  orderBy?: "followedCount" | "rating";
+  orderDirection?: "asc" | "desc";
 };
 
 export type PaginatedMangaListResult = {
@@ -189,13 +191,23 @@ export async function getMangaListPage(
 ): Promise<PaginatedMangaListResult> {
   const title = options.title?.trim();
   const genreTagId = options.genreTagId?.trim();
-  const response = await fetchFromMangaDex<MangaListResponse>("/manga", {
+  const searchParams: SearchParams = {
     limit: options.limit ?? DEFAULT_MANGA_LIST_LIMIT,
     offset: options.offset ?? 0,
     title: title || undefined,
     "includedTags[]": genreTagId ? [genreTagId] : undefined,
     "includes[]": ["cover_art", "author", "artist"],
-  });
+  };
+
+  if (options.orderBy) {
+    searchParams[`order[${options.orderBy}]`] =
+      options.orderDirection ?? "desc";
+  }
+
+  const response = await fetchFromMangaDex<MangaListResponse>(
+    "/manga",
+    searchParams
+  );
 
   return {
     manga: response.data,
@@ -204,6 +216,16 @@ export async function getMangaListPage(
     total: response.total,
     hasMore: response.offset + response.data.length < response.total,
   };
+}
+
+export async function getTrendingManga(limit = 10): Promise<Manga[]> {
+  const result = await getMangaListPage({
+    limit,
+    orderBy: "followedCount",
+    orderDirection: "desc",
+  });
+
+  return result.manga;
 }
 
 export async function getGenreTags(): Promise<MangaTag[]> {
