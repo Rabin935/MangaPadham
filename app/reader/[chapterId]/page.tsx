@@ -1,7 +1,11 @@
+import { cookies } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ChapterUnlockCard } from "@/components/reader/chapter-unlock-card";
 import { ReadingTracker } from "@/components/reader/reading-tracker";
+import { getAuthUserFromToken } from "@/lib/auth";
+import { getChapterAccessState } from "@/lib/chapter-access";
 import {
   getChapterById,
   getChapterPages,
@@ -32,6 +36,27 @@ function ErrorState({ message }: { message: string }) {
       <p className="mt-4 text-base leading-7 text-slate-200">{message}</p>
     </div>
   );
+}
+
+function formatAccessDateLabel(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+  }).format(value);
+}
+
+async function getCurrentUserFromCookies() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+
+  if (!token) {
+    return null;
+  }
+
+  try {
+    return await getAuthUserFromToken(token);
+  } catch {
+    return null;
+  }
 }
 
 function ChapterNavButton({
@@ -95,6 +120,37 @@ export default async function ReaderPage({ params }: ReaderPageProps) {
         </div>
       </main>
     );
+  }
+
+  const chapterAccessState = getChapterAccessState(chapter);
+
+  if (chapterAccessState.requiresUnlock) {
+    const currentUser = await getCurrentUserFromCookies();
+    const userAccessState = getChapterAccessState(
+      chapter,
+      currentUser?.unlockedChapters ?? []
+    );
+
+    if (userAccessState.requiresUnlock) {
+      return (
+        <main className="relative isolate min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-[-8%] top-10 h-72 w-72 rounded-full bg-cyan-400/16 blur-3xl" />
+            <div className="absolute bottom-[-10%] right-[-10%] h-80 w-80 rounded-full bg-amber-400/10 blur-3xl" />
+          </div>
+
+          <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-4xl items-center">
+            <ChapterUnlockCard
+              chapterId={chapter.id}
+              mangaId={mangaId}
+              unlockPrice={userAccessState.unlockPrice}
+              freeAtLabel={formatAccessDateLabel(userAccessState.freeAt)}
+              releaseDelayDays={userAccessState.releaseDelayDays}
+            />
+          </div>
+        </main>
+      );
+    }
   }
 
   try {

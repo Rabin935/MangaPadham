@@ -120,13 +120,7 @@ export function serializeAuthUser(user: AuthenticatedUser): AuthUser {
   };
 }
 
-export async function getAuthUser(request: Request) {
-  const token = getTokenFromRequest(request);
-
-  if (!token) {
-    return null;
-  }
-
+export async function getAuthUserFromToken(token: string) {
   const payload = verifyToken(token);
 
   await connectDB();
@@ -138,6 +132,16 @@ export async function getAuthUser(request: Request) {
   }
 
   return createAuthenticatedUser(user);
+}
+
+export async function getAuthUser(request: Request) {
+  const token = getTokenFromRequest(request);
+
+  if (!token) {
+    return null;
+  }
+
+  return getAuthUserFromToken(token);
 }
 
 export function withAuth<TContext = RouteContext>(

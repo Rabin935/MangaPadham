@@ -1,7 +1,10 @@
+import { cookies } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FavoriteToggleButton } from "@/components/manga/favorite-toggle-button";
+import { getAuthUserFromToken } from "@/lib/auth";
+import { getChapterAccessState } from "@/lib/chapter-access";
 import { getChapters, getMangaById, MangaDexRequestError } from "@/lib/mangadex";
 import type { Chapter, Manga } from "@/types/mangadex";
 import {
@@ -33,6 +36,27 @@ function ErrorState({ message }: { message: string }) {
       <p className="mt-4 text-base leading-7 text-slate-200">{message}</p>
     </div>
   );
+}
+
+function formatAccessDateLabel(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+  }).format(value);
+}
+
+async function getCurrentUserFromCookies() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+
+  if (!token) {
+    return null;
+  }
+
+  try {
+    return await getAuthUserFromToken(token);
+  } catch {
+    return null;
+  }
 }
 
 export default async function MangaDetailPage({
@@ -83,7 +107,12 @@ export default async function MangaDetailPage({
   const coverImageUrl = getCoverImageUrl(manga, "512");
   const genres = getGenreLabels(manga);
   const tags = getTagLabels(manga);
+  const currentUser = await getCurrentUserFromCookies();
+  const unlockedChapterIds = currentUser?.unlockedChapters ?? [];
   const latestChapter = chapters[0] ?? null;
+  const latestChapterAccessState = latestChapter
+    ? getChapterAccessState(latestChapter, unlockedChapterIds)
+    : null;
 
   return (
     <main className="relative isolate min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
@@ -129,12 +158,22 @@ export default async function MangaDetailPage({
 
             <div className="mt-6 flex flex-wrap gap-3">
               {latestChapter ? (
-                <Link
-                  href={getReaderPageHref(latestChapter.id)}
-                  className="rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
-                >
-                  Read Now
-                </Link>
+                <>
+                  <Link
+                    href={getReaderPageHref(latestChapter.id)}
+                    className="rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
+                  >
+                    {latestChapterAccessState?.requiresUnlock
+                      ? "Unlock latest chapter"
+                      : "Read Now"}
+                  </Link>
+                  {latestChapterAccessState?.requiresUnlock ? (
+                    <p className="basis-full text-sm text-amber-200">
+                      Latest release is premium for {latestChapterAccessState.unlockPrice} coins until{" "}
+                      {formatAccessDateLabel(latestChapterAccessState.freeAt)}.
+                    </p>
+                  ) : null}
+                </>
               ) : (
                 <a
                   href={`https://mangadex.org/title/${manga.id}`}
@@ -205,7 +244,10 @@ export default async function MangaDetailPage({
               </h2>
             </div>
             <p className="text-sm text-slate-400">
-              Sorted with the newest releases first.
+              Sorted with the newest releases first. New chapters become free
+              after {latestChapterAccessState?.releaseDelayDays ?? 3} days or
+              can be unlocked early for{" "}
+              {latestChapterAccessState?.unlockPrice ?? 20} coins.
             </p>
           </div>
 
@@ -216,23 +258,56 @@ export default async function MangaDetailPage({
           ) : chapters.length > 0 ? (
             <div className="mt-6 grid gap-3">
               {chapters.map((chapter) => (
-                <Link
-                  key={chapter.id}
-                  href={getReaderPageHref(chapter.id)}
-                  className="flex flex-col gap-3 rounded-[22px] border border-white/10 bg-[rgba(8,14,32,0.78)] px-5 py-4 transition hover:border-cyan-300/35 hover:bg-[rgba(10,18,38,0.9)] sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-cyan-200">
-                      {getChapterNumberLabel(chapter)}
-                    </p>
-                    <p className="mt-1 text-sm leading-6 text-slate-300">
-                      {getChapterTitle(chapter)}
-                    </p>
-                  </div>
-                  <span className="text-sm font-medium text-amber-200">
-                    Open reader
-                  </span>
-                </Link>
+                (() => {
+                  const chapterAccessState = getChapterAccessState(
+                    chapter,
+                    unlockedChapterIds
+                  );
+
+                  return (
+                    <Link
+                      key={chapter.id}
+                      href={getReaderPageHref(chapter.id)}
+                      className="flex flex-col gap-3 rounded-[22px] border border-white/10 bg-[rgba(8,14,32,0.78)] px-5 py-4 transition hover:border-cyan-300/35 hover:bg-[rgba(10,18,38,0.9)] sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-semibold text-cyan-200">
+                            {getChapterNumberLabel(chapter)}
+                          </p>
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${
+                              chapterAccessState.requiresUnlock
+                                ? "border border-amber-300/25 bg-amber-300/10 text-amber-100"
+                                : chapterAccessState.isUnlocked
+                                  ? "border border-cyan-300/25 bg-cyan-300/10 text-cyan-100"
+                                  : "border border-emerald-300/25 bg-emerald-300/10 text-emerald-100"
+                            }`}
+                          >
+                            {chapterAccessState.requiresUnlock
+                              ? "Locked"
+                              : chapterAccessState.isUnlocked
+                                ? "Unlocked"
+                                : "Free"}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm leading-6 text-slate-300">
+                          {getChapterTitle(chapter)}
+                        </p>
+                        {chapterAccessState.requiresUnlock ? (
+                          <p className="mt-2 text-xs uppercase tracking-[0.25em] text-amber-200/80">
+                            Free on {formatAccessDateLabel(chapterAccessState.freeAt)}
+                          </p>
+                        ) : null}
+                      </div>
+                      <span className="text-sm font-medium text-amber-200">
+                        {chapterAccessState.requiresUnlock
+                          ? `${chapterAccessState.unlockPrice} coins`
+                          : "Open reader"}
+                      </span>
+                    </Link>
+                  );
+                })()
               ))}
             </div>
           ) : (
