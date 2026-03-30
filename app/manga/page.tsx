@@ -1,5 +1,5 @@
 import { MangaLibrary } from "@/components/manga/manga-library";
-import { getGenreTags, getMangaList } from "@/lib/mangadex";
+import { getGenreTags, getMangaListPage } from "@/lib/mangadex";
 import { getLocalizedText } from "@/lib/manga-display";
 import type { Manga, MangaTag } from "@/types/mangadex";
 
@@ -18,14 +18,18 @@ export default async function MangaPage() {
   let initialManga: Manga[] = [];
   let genreTags: MangaTag[] = [];
   let errorMessage: string | null = null;
+  let initialHasMore = false;
+  let initialNextOffset = 0;
 
   try {
-    const [mangaList, availableGenreTags] = await Promise.all([
-      getMangaList(),
+    const [mangaPage, availableGenreTags] = await Promise.all([
+      getMangaListPage(),
       getGenreTags(),
     ]);
 
-    initialManga = mangaList;
+    initialManga = mangaPage.manga;
+    initialHasMore = mangaPage.hasMore;
+    initialNextOffset = mangaPage.offset + mangaPage.manga.length;
     genreTags = [...availableGenreTags].sort((leftTag, rightTag) =>
       getLocalizedText(leftTag.attributes.name, "Unknown genre").localeCompare(
         getLocalizedText(rightTag.attributes.name, "Unknown genre")
@@ -64,7 +68,12 @@ export default async function MangaPage() {
             <ErrorState message={errorMessage} />
           </div>
         ) : (
-          <MangaLibrary initialManga={initialManga} genreTags={genreTags} />
+          <MangaLibrary
+            initialManga={initialManga}
+            initialHasMore={initialHasMore}
+            initialNextOffset={initialNextOffset}
+            genreTags={genreTags}
+          />
         )}
       </div>
     </main>

@@ -18,6 +18,15 @@ export type MangaListOptions = {
   title?: string;
   genreTagId?: string;
   limit?: number;
+  offset?: number;
+};
+
+export type PaginatedMangaListResult = {
+  manga: Manga[];
+  limit: number;
+  offset: number;
+  total: number;
+  hasMore: boolean;
 };
 
 const DEFAULT_MANGA_LIST_LIMIT = 20;
@@ -170,16 +179,31 @@ function normalizeId(value: string, label: string) {
 export async function getMangaList(
   options: MangaListOptions = {}
 ): Promise<Manga[]> {
+  const result = await getMangaListPage(options);
+
+  return result.manga;
+}
+
+export async function getMangaListPage(
+  options: MangaListOptions = {}
+): Promise<PaginatedMangaListResult> {
   const title = options.title?.trim();
   const genreTagId = options.genreTagId?.trim();
   const response = await fetchFromMangaDex<MangaListResponse>("/manga", {
     limit: options.limit ?? DEFAULT_MANGA_LIST_LIMIT,
+    offset: options.offset ?? 0,
     title: title || undefined,
     "includedTags[]": genreTagId ? [genreTagId] : undefined,
     "includes[]": ["cover_art", "author", "artist"],
   });
 
-  return response.data;
+  return {
+    manga: response.data,
+    limit: response.limit,
+    offset: response.offset,
+    total: response.total,
+    hasMore: response.offset + response.data.length < response.total,
+  };
 }
 
 export async function getGenreTags(): Promise<MangaTag[]> {

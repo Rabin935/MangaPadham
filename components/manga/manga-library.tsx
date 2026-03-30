@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   getCoverImageUrl,
   getGenreLabels,
@@ -13,6 +13,8 @@ import type { Manga, MangaTag } from "@/types/mangadex";
 
 type MangaLibraryProps = {
   initialManga: Manga[];
+  initialHasMore: boolean;
+  initialNextOffset: number;
   genreTags: MangaTag[];
 };
 
@@ -20,7 +22,13 @@ type MangaSearchResponse = {
   success?: boolean;
   message?: string;
   manga?: Manga[];
+  offset?: number;
+  limit?: number;
+  total?: number;
+  hasMore?: boolean;
 };
+
+const PAGE_SIZE = 20;
 
 async function readMangaPayload(response: Response) {
   try {
@@ -30,7 +38,7 @@ async function readMangaPayload(response: Response) {
   }
 }
 
-function buildSearchUrl(title: string, genreTagId: string) {
+function buildSearchUrl(title: string, genreTagId: string, offset = 0) {
   const searchParams = new URLSearchParams();
 
   if (title) {
@@ -40,6 +48,9 @@ function buildSearchUrl(title: string, genreTagId: string) {
   if (genreTagId) {
     searchParams.set("genre", genreTagId);
   }
+
+  searchParams.set("limit", String(PAGE_SIZE));
+  searchParams.set("offset", String(offset));
 
   const queryString = searchParams.toString();
 
@@ -107,6 +118,15 @@ function MangaGridSkeleton() {
   );
 }
 
+function BottomLoadingSpinner() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 py-8 text-sm text-slate-400">
+      <span className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" />
+      <span>Loading more manga...</span>
+    </div>
+  );
+}
+
 function EmptyState({
   hasActiveFilters,
 }: {
@@ -139,14 +159,22 @@ function ErrorState({ message }: { message: string }) {
 
 export function MangaLibrary({
   initialManga,
+  initialHasMore,
+  initialNextOffset,
   genreTags,
 }: MangaLibraryProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedGenreTagId, setSelectedGenreTagId] = useState("");
   const [mangaList, setMangaList] = useState(initialManga);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [nextOffset, setNextOffset] = useState(initialNextOffset);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loadMoreErrorMessage, setLoadMoreErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const isLoadMorePendingRef = useRef(false);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -164,8 +192,13 @@ export function MangaLibrary({
 
     if (!hasActiveFilters) {
       setMangaList(initialManga);
+      setHasMore(initialHasMore);
+      setNextOffset(initialNextOffset);
       setErrorMessage(null);
+      setLoadMoreErrorMessage(null);
       setIsLoading(false);
+      setIsLoadingMore(false);
+      isLoadMorePendingRef.current = false;
       return;
     }
 
@@ -175,10 +208,11 @@ export function MangaLibrary({
     async function loadManga() {
       setIsLoading(true);
       setErrorMessage(null);
+      setLoadMoreErrorMessage(null);
 
       try {
         const response = await fetch(
-          buildSearchUrl(debouncedSearchTerm, selectedGenreTagId),
+          buildSearchUrl(debouncedSearchTerm, selectedGenreTagId, 0),
           {
             method: "GET",
             cache: "no-store",
@@ -197,7 +231,11 @@ export function MangaLibrary({
           return;
         }
 
-        setMangaList(payload?.manga ?? []);
+        const nextMangaList = payload?.manga ?? [];
+
+        setMangaList(nextMangaList);
+        setHasMore(Boolean(payload?.hasMore));
+        setNextOffset((payload?.offset ?? 0) + nextMangaList.length);
       } catch (error) {
         if (controller.signal.aborted || !active) {
           return;
@@ -211,6 +249,7 @@ export function MangaLibrary({
       } finally {
         if (active) {
           setIsLoading(false);
+          setIsLoadingMore(false);
         }
       }
     }
@@ -221,7 +260,107 @@ export function MangaLibrary({
       active = false;
       controller.abort();
     };
-  }, [debouncedSearchTerm, initialManga, selectedGenreTagId]);
+  }, [
+    debouncedSearchTerm,
+    initialHasMore,
+    initialManga,
+    initialNextOffset,
+    selectedGenreTagId,
+  ]);
+
+  const loadMoreManga = useEffectEvent(async () => {
+    if (
+      isLoading ||
+      isLoadingMore ||
+      isLoadMorePendingRef.current ||
+      !hasMore
+    ) {
+      return;
+    }
+
+    isLoadMorePendingRef.current = true;
+    setIsLoadingMore(true);
+    setLoadMoreErrorMessage(null);
+
+    try {
+      const response = await fetch(
+        buildSearchUrl(debouncedSearchTerm, selectedGenreTagId, nextOffset),
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const payload = await readMangaPayload(response);
+
+      if (!response.ok) {
+        setLoadMoreErrorMessage(
+          payload?.message || "Unable to load more manga right now."
+        );
+        return;
+      }
+
+      const nextPage = payload?.manga ?? [];
+
+      setMangaList((currentMangaList) => {
+        const existingIds = new Set(currentMangaList.map((manga) => manga.id));
+        const uniqueNextPage = nextPage.filter((manga) => !existingIds.has(manga.id));
+
+        return [...currentMangaList, ...uniqueNextPage];
+      });
+      setHasMore(Boolean(payload?.hasMore));
+      setNextOffset((payload?.offset ?? nextOffset) + nextPage.length);
+    } catch (error) {
+      setLoadMoreErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to load more manga right now."
+      );
+    } finally {
+      isLoadMorePendingRef.current = false;
+      setIsLoadingMore(false);
+    }
+  });
+
+  useEffect(() => {
+    const loadMoreElement = loadMoreRef.current;
+
+    if (
+      !loadMoreElement ||
+      isLoading ||
+      isLoadingMore ||
+      !hasMore ||
+      Boolean(errorMessage) ||
+      Boolean(loadMoreErrorMessage)
+    ) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+
+        if (entry?.isIntersecting) {
+          void loadMoreManga();
+        }
+      },
+      {
+        rootMargin: "240px 0px",
+      }
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    errorMessage,
+    hasMore,
+    isLoading,
+    isLoadingMore,
+    loadMoreErrorMessage,
+  ]);
 
   const hasActiveFilters = Boolean(debouncedSearchTerm) || Boolean(selectedGenreTagId);
 
@@ -268,13 +407,15 @@ export function MangaLibrary({
         <div className="mt-4 flex flex-col gap-2 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
           <p>
             {hasActiveFilters
-              ? `Showing ${mangaList.length} matching manga.`
-              : `Showing ${mangaList.length} featured manga.`}
+              ? `Showing ${mangaList.length} matching manga${hasMore ? " so far" : ""}.`
+              : `Showing ${mangaList.length} featured manga${hasMore ? " so far" : ""}.`}
           </p>
-          <p className={isLoading ? "text-cyan-200" : ""}>
+          <p className={isLoading || isLoadingMore ? "text-cyan-200" : ""}>
             {isLoading
               ? "Updating results..."
-              : "Results update automatically as you type."}
+              : isLoadingMore
+                ? "Loading more manga..."
+                : "Results update automatically as you type."}
           </p>
         </div>
       </section>
@@ -285,11 +426,22 @@ export function MangaLibrary({
         ) : isLoading && mangaList.length === 0 ? (
           <MangaGridSkeleton />
         ) : mangaList.length > 0 ? (
-          <section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            {mangaList.map((manga) => (
-              <MangaCard key={manga.id} manga={manga} />
-            ))}
-          </section>
+          <>
+            <section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+              {mangaList.map((manga) => (
+                <MangaCard key={manga.id} manga={manga} />
+              ))}
+            </section>
+
+            <div ref={loadMoreRef} className="mt-6 min-h-10">
+              {loadMoreErrorMessage ? (
+                <div className="rounded-[22px] border border-rose-300/20 bg-rose-400/8 px-4 py-3 text-sm text-rose-100">
+                  {loadMoreErrorMessage}
+                </div>
+              ) : null}
+              {isLoadingMore ? <BottomLoadingSpinner /> : null}
+            </div>
+          </>
         ) : (
           <EmptyState hasActiveFilters={hasActiveFilters} />
         )}
